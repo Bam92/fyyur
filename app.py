@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
+from flask import Flask
 import json
 import dateutil.parser
 import babel
@@ -19,10 +19,12 @@ from forms import *
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
+
+app.config['SQLALCHEMY_DATABASE_URI'] ='postgresql://postgres:postgres%40psql@localhost:5432/udacity'
 db = SQLAlchemy(app)
 
 # TODO: connect to a local postgresql database
-
+# app.config['SQLALCHEMY_DATABASE_URI']
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
@@ -508,6 +510,7 @@ if not app.debug:
 #----------------------------------------------------------------------------#
 # Launch.
 #----------------------------------------------------------------------------#
+
 
 # Default port:
 if __name__ == '__main__':
