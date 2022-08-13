@@ -35,18 +35,32 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 # Models.
 #----------------------------------------------------------------------------#
 
+class Area(db.Model):
+
+  __tablename__ = 'Area'
+
+  id = db.Column(db.Integer, primary_key=True)
+  city = db.Column(db.String(120))
+  state = db.Column(db.String(120))
+  venues = db.relationship('Venue', backref='area')
+
+  def __init__(self, city, state):
+      self.city = city
+      self.state = state
+
 class Venue(db.Model):
 
     __tablename__ = 'Venue'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
+    # city = db.Column(db.String(120))
+    # state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    area_id = db.Column(db.Integer, db.ForeignKey('Area.id'))
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -121,7 +135,8 @@ def venues():
       "num_upcoming_shows": 0,
     }]
   }]
-  return render_template('pages/venues.html', areas=data)
+  return render_template('pages/venues.html', areas=Area.query.all())
+  # return render_template('pages/venues.html', areas=data)
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -142,6 +157,17 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
+  venue=Venue.query.join(Area, Venue.area_id == Area.id).add_columns(Venue.id, Venue.name, Venue.image_link, Area.city, Area.state).filter(Venue.id == venue_id).first()
+
+  # test=\
+  # Venue.query()\
+  # .join(Area, Venue.area_id == Area.id)\
+  # .add_columns(Venue.id, Venue.name, Area.city)\
+  # .filter(Venue.id == venue_id)\
+  # .first()
+
+  
+  print(f'## {venue.city}')
   data1={
     "id": 1,
     "name": "The Musical Hop",
@@ -219,8 +245,8 @@ def show_venue(venue_id):
     "past_shows_count": 1,
     "upcoming_shows_count": 1,
   }
-  data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
-  return render_template('pages/show_venue.html', venue=data)
+  # data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
+  return render_template('pages/show_venue.html', venue=venue)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -234,6 +260,25 @@ def create_venue_form():
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  form = VenueForm()
+
+  name = request.form['name']
+  image_link = request.form['image_link']
+  facebook_link = request.form['facebook_link']
+  city = request.form['city']
+  state = request.form['state']
+
+  area = Area(city, state)
+
+  db.session.add(area)
+  db.session.commit()
+
+  area_id = area.id
+
+  record = Venue(name, image_link, facebook_link, area_id)
+
+  db.session.add(record)
+  db.session.commit()
 
   # on successful db insert, flash success
   flash('Venue ' + request.form['name'] + ' was successfully listed!')
@@ -445,7 +490,6 @@ def create_artist_submission():
   # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
   return render_template('pages/home.html')
 
-
 #  Shows
 #  ----------------------------------------------------------------
 
@@ -516,7 +560,6 @@ def not_found_error(error):
 @app.errorhandler(500)
 def server_error(error):
     return render_template('errors/500.html'), 500
-
 
 if not app.debug:
     file_handler = FileHandler('error.log')
