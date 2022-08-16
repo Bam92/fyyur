@@ -24,7 +24,6 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 
-# app.config['SQLALCHEMY_DATABASE_URI'] ='postgresql://postgres:postgres%40psql@localhost:5432/udacity'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -61,6 +60,8 @@ class Venue(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     area_id = db.Column(db.Integer, db.ForeignKey('Area.id'))
+    shows = db.relationship('Show', backref='venue')
+
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -72,6 +73,8 @@ class Artist(db.Model):
     name = db.Column(db.String)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    shows = db.relationship('Show', backref='artist')
+
 
     def __init__(self, name, image_link, facebook_link):
       self.name = name
@@ -81,15 +84,26 @@ class Artist(db.Model):
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+class Show(db.Model):
+
+  __tablename__ = 'Show'
+
+  id = db.Column(db.Integer, primary_key=True)
+  start_time = db.Column(db.DateTime)
+  # facebook_link = db.Column(db.String(120))
+  artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'))
+  venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'))
 
 
-# db.create_all()
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
 
 def format_datetime(value, format='medium'):
-  date = dateutil.parser.parse(value)
+  if isinstance(value, str):
+    date = dateutil.parser.parse(value)
+  else:
+    date = value
   if format == 'full':
       format="EEEE MMMM, d, y 'at' h:mma"
   elif format == 'medium':
@@ -105,7 +119,6 @@ app.jinja_env.filters['datetime'] = format_datetime
 @app.route('/')
 def index():
   return render_template('pages/home.html')
-
 
 #  Venues
 #  ----------------------------------------------------------------
@@ -158,13 +171,6 @@ def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
   venue=Venue.query.join(Area, Venue.area_id == Area.id).add_columns(Venue.id, Venue.name, Venue.image_link, Area.city, Area.state).filter(Venue.id == venue_id).first()
-
-  # test=\
-  # Venue.query()\
-  # .join(Area, Venue.area_id == Area.id)\
-  # .add_columns(Venue.id, Venue.name, Area.city)\
-  # .filter(Venue.id == venue_id)\
-  # .first()
 
   
   print(f'## {venue.city}')
@@ -497,6 +503,10 @@ def create_artist_submission():
 def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
+  # shows=Show.query.join(Venue, Venue.id == Show.id).add_columns(Show.id, Show.venue_id, Show.artist_id,Venue.name, Venue.image_link).first()
+  shows=Show.query.join(Venue, Venue.id == Show.id).join(Artist, Artist.id == Show.id).add_columns(Show.id, Show.venue_id, Show.artist_id, Show.start_time, Venue.name.label("venue_name"), Artist.name.label("artist_name"), Artist.image_link.label("artist_image_link")).all()
+
+  # print(f'## {shows.id}')
   data=[{
     "venue_id": 1,
     "venue_name": "The Musical Hop",
@@ -533,7 +543,7 @@ def shows():
     "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
     "start_time": "2035-04-15T20:00:00.000Z"
   }]
-  return render_template('pages/shows.html', shows=data)
+  return render_template('pages/shows.html', shows=shows)
 
 @app.route('/shows/create')
 def create_shows():
