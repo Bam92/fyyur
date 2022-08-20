@@ -62,6 +62,14 @@ class Venue(db.Model):
     area_id = db.Column(db.Integer, db.ForeignKey('Area.id'))
     shows = db.relationship('Show', backref='venue')
 
+    def __init__(self, name, image_link, facebook_link, area_id):
+       self.name = name
+      #  self.address = address
+      #  self.phone = phone
+       self.image_link = image_link
+       self.facebook_link = facebook_link
+       self.area_id = area_id
+
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -93,6 +101,11 @@ class Show(db.Model):
   # facebook_link = db.Column(db.String(120))
   artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'))
   venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'))
+
+  def __init__(self, artist, venue, start_time):
+     self.artist_id = artist
+     self.venue_id = venue
+     self.start_time = start_time
 
 
 #----------------------------------------------------------------------------#
@@ -504,9 +517,9 @@ def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
   # shows=Show.query.join(Venue, Venue.id == Show.id).add_columns(Show.id, Show.venue_id, Show.artist_id,Venue.name, Venue.image_link).first()
-  shows=Show.query.join(Venue, Venue.id == Show.id).join(Artist, Artist.id == Show.id).add_columns(Show.id, Show.venue_id, Show.artist_id, Show.start_time, Venue.name.label("venue_name"), Artist.name.label("artist_name"), Artist.image_link.label("artist_image_link")).all()
+  shows=Show.query.join(Artist, Artist.id == Show.id).join(Venue, Venue.id == Show.id).add_columns(Show.id, Show.venue_id, Show.artist_id, Show.start_time, Venue.name.label("venue_name"), Artist.name.label("artist_name"), Artist.image_link.label("artist_image_link")).all()
 
-  # print(f'## {shows.id}')
+  print(f'## {len(shows)}')
   data=[{
     "venue_id": 1,
     "venue_name": "The Musical Hop",
@@ -555,6 +568,16 @@ def create_shows():
 def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
+  form = ShowForm()
+
+  artist = request.form['artist_id']
+  venue = request.form['venue_id']
+  show_date = request.form['start_time']
+
+  record = Show(artist, venue, show_date)
+
+  db.session.add(record)
+  db.session.commit()
 
   # on successful db insert, flash success
   flash('Show was successfully listed!')
