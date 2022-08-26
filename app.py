@@ -1,6 +1,7 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
+from curses.ascii import FF
 from unicodedata import name
 from flask import Flask
 import json
@@ -160,9 +161,6 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-  # seach for Hop should return "The Musical Hop".
-  # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
   query = request.form.get("search_term") 
   venues = Venue.query.filter(Venue.name.ilike("%" + query + "%")).all()
   
@@ -189,7 +187,7 @@ def show_venue(venue_id):
     "facebook_link": "https://www.facebook.com/TheMusicalHop",
     "seeking_talent": True,
     "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-    "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
+    "image_link": "https://images.unsplash.comhttp://laparolededieu.org/Etudes%20au%20BRUS/70-08-11_Et_1Cor12.mp3/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
     "past_shows": [{
       "artist_id": 4,
       "artist_name": "Guns N Petals",
@@ -255,7 +253,7 @@ def show_venue(venue_id):
     "upcoming_shows_count": 1,
   }
   # data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
-  return render_template('pages/show_venue.html', venue=venue)
+  return render_template('pages/show_venue.html', venue=venues)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -296,14 +294,23 @@ def create_venue_submission():
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   return render_template('pages/home.html')
 
-@app.route('/venues/<venue_id>', methods=['DELETE'])
+@app.route('/venues/<venue_id>', methods=['POST'])
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+  try:
+    Venue.query.filter(Venue.id == venue_id).delete()
+    db.session.commit()
+
+    flash('Deleted venue with id = ' + venue_id)
+
+  except:
+    flash('Unable to delete venue with id = ' + venue_id)
 
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+  return render_template('pages/home.html')
+
 
 #  Artists
 #  ----------------------------------------------------------------

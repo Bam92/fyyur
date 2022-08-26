@@ -77,5 +77,13 @@
 
 <a href="/venues/{{ venue.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
 
+<hr>
+<form action="" method="post">
+	<input type="submit" 
+	onclick="return confirm('Are you sure you want to delete this entry?')"
+	value="Delete" class="btn btn-danger btn-lg">
+	<!-- <a href="/venues/{{ venue.id }}/edit"><button class="btn btn-danger btn-lg">Supprimer</button></a> -->
+</form>
+
 {% endblock %}
 
