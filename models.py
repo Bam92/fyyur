@@ -1,3 +1,4 @@
+from email.policy import default
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -31,12 +32,17 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120))
     area_id = db.Column(db.Integer, db.ForeignKey('Area.id'))
     shows = db.relationship('Show', backref='venue')
+    seeking_talent = db.Column(db.Boolean, default=True)
+    seeking_description = db.Column(db.String(500))
+    genres = db.Column(db.ARRAY(db.String))
 
-    def __init__(self, name, image_link, facebook_link, area_id):
+    def __init__(self, name, address, image_link, facebook_link, area_id, seeking_talent):
        self.name = name
+       self.address= address
        self.image_link = image_link
        self.facebook_link = facebook_link
        self.area_id = area_id
+       self.seeking_talent = seeking_talent
 
 class Artist(db.Model):
 

@@ -29,7 +29,8 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 app.config['SQLALCHEMY_DATABASE_URI']
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -94,31 +95,37 @@ def create_venue_form():
 def create_venue_submission():
 
   form = VenueForm()
+  if form.validate_on_submit():
+    name = request.form['name']
+    image_link = request.form['image_link']
+    facebook_link = request.form['facebook_link']
+    city = request.form['city']
+    state = request.form['state']
+    address= request.form['address']
+    talent= request.form['seeking_talent']
 
-  name = request.form['name']
-  image_link = request.form['image_link']
-  facebook_link = request.form['facebook_link']
-  city = request.form['city']
-  state = request.form['state']
+    area = Area(city, state)
 
-  area = Area(city, state)
-
-  db.session.add(area)
-  db.session.commit()
-
-  area_id = area.id
-
-  record = Venue(name, image_link, facebook_link, area_id)
-
-  try:
-    db.session.add(record)
+    db.session.add(area)
     db.session.commit()
 
-  # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  except:
-    flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    area_id = area.id
+
+    record = Venue(name, image_link, facebook_link, address, talent, area_id)
+
+    try:
+      db.session.add(record)
+      db.session.commit()
+
+    # on successful db insert, flash success
+      flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    except:
+      # flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.' + form.errors.items())
+      for field, message in form.errors.items():
+        flash(field + ' - ' + str(message), 'danger')
+  else:
+    for field, message in form.errors.items():
+      flash(field + ' - ' + str(message), 'danger')
   return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['POST'])
