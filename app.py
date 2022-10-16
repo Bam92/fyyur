@@ -29,7 +29,6 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 app.config['SQLALCHEMY_DATABASE_URI']
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 #----------------------------------------------------------------------------#
@@ -64,7 +63,6 @@ def index():
 def venues():
   
   return render_template('pages/venues.html', areas=Area.query.all())
-  # return render_template('pages/venues.html', areas=data)
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -157,8 +155,25 @@ def search_artists():
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
+  artist=Artist.query.get(artist_id)
+  upcoming_shows = Show.query.join(Venue).\
+    add_columns(Venue.id.label("venue_id"), Venue.name.label("venue_name"), Venue.image_link.\
+      label("venue_image_link"), Show.start_time).\
+        filter(Show.artist_id==artist_id).filter(Show.start_time>datetime.now()).all()
+  past_shows = Show.query.join(Venue).\
+    add_columns(Venue.id.label("venue_id"), Venue.name.label("venue_name"), Venue.image_link.\
+      label("venue_image_link"), Show.start_time).\
+        filter(Show.artist_id==artist_id).filter(Show.start_time<datetime.now()).all()
   
-  return render_template('pages/show_artist.html', artist=Artist.query.get(artist_id))
+  # add new items to artist
+  upcoming_shows_count = len(upcoming_shows)
+  past_shows_count = len(past_shows)
+  artist.upcoming_shows = upcoming_shows
+  artist.past_shows = past_shows
+  artist.upcoming_shows_count = upcoming_shows_count
+  artist.past_shows_count = past_shows_count
+  
+  return render_template('pages/show_artist.html', artist=artist)
 
 #  Update
 #  ----------------------------------------------------------------
